@@ -23,6 +23,7 @@
 #include "ppm.h"
 #include "fonts.h"
 #include <iostream>
+//#include "lab3http.cpp"
 
 //defined types
 typedef double Flt;
@@ -110,10 +111,25 @@ public:
         delay = 0.1;
     }
 };
+//enumerated type
+// value is 1
+//can be used as constant values 
+
+enum State {
+    STATE_NONE,
+    STATE_STARTUP,
+    STATE_GAMEPLAY,
+    STATE_GAMEOVER //val 4
+
+};
+ char message[400]; // ***************
+ extern int messageFunction(); //*********8
 
 class Global {
 public:
     unsigned char keys[65536];
+   
+    State state; //*
     int done;
     int xres, yres;
     int movie, movieStep;
@@ -138,6 +154,9 @@ public:
     Global()
     {
         logOpen();
+        state = STATE_STARTUP; //*
+   // lab3
+        //keys01[4000]; // ********************
         camera[0] = camera[1] = 0.0;
         ball_pos[0] = 500.0;
         ball_pos[1] = ball_pos[2] = 0.0;
@@ -165,6 +184,7 @@ public:
             box[i][2] = 0.0;
         }
         memset(keys, 0, 65536);
+       // memset(message, 0, 4000); //******************************
     }
 } gl;
 
@@ -532,6 +552,11 @@ void checkKeys(XEvent *e)
     if (shift) {
     }
     switch (key) {
+    case XK_q:
+        //gl.keys01 ^= 1;
+    case XK_p:
+        gl.state = STATE_GAMEPLAY;
+        break;
     case XK_s:
         screenCapture();
         break;
@@ -674,12 +699,11 @@ void physics(void)
     int col = (int) (gl.camera[0] / dd) + (500.0 / lev.tilesize[0] + 1);
     col = col % lev.ncols;
     int hgt = 0;
-    //A.H. 
+    //linear search, fix to one search
     if (lev.dynamicHeight[col] != -1) { // array added
         // set hgt
         hgt = lev.dynamicHeight[col];
-    }
-    else { //std:: cout << "recalculating  \n ";
+    } else { //std:: cout << "recalculating  \n ";
 
         for (int i = 0; i < lev.nrows; i++) {
             if (lev.arr[i][col] != ' ') {
@@ -931,7 +955,57 @@ void render(void)
     if (gl.movie) {
         screenCapture();
     }
-}
+
+
+    //
+    // Check for startup state
+    if (gl.state == STATE_STARTUP) {
+        h = 100;
+        w = 200;
+        glPushMatrix();
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+
+        //transparency   
+        glColor4f(1.0, 1.0, 0.0, 0.8); // YELLOW
+        glTranslated(gl.xres / 2, gl.yres / 2, 0);
+        glBegin(GL_QUADS);
+        glVertex2i(-w, -h);
+        glVertex2i(-w, h);
+        glVertex2i(w, h);
+        glVertex2i(w, -h);
+        glEnd();
+        glDisable(GL_BLEND);
+        glPopMatrix();
+        r.bot = gl.yres / 2 + 80;
+        r.left = gl.xres / 2;
+        r.center = 1;
+        ggprint8b(&r, 16, 0, "W   STARTUP SCREEN");
+        r.center = 0;
+        r.left= gl.xres/2 -100;
+        ggprint8b(&r, 16, 0, "W walk");
+        ggprint8b(&r, 16, 0, "P   Play");
+        ggprint8b(&r, 16, 0, "Sure\n" );
+        messageFunction ();  //just call the function
+            ggprint8b(&r, 16, 0, "Sure\n %s", message);
+    
+
+    
+}   
+
+    
+    
+         
+        
+    }
+
+
+
+
+
+
 
 
 
