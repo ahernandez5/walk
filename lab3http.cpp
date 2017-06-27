@@ -45,7 +45,7 @@ int messageFunction()
     char buf[BUFSIZ + 1];
     //char *host;
 
-    char page[] = "/~ahernandez/3350/3/message";
+    char page[] = "/~ahernandez5/3350/lab3/message";
     //char *page = "mypage
     char host[] = "sleipnir.cs.csubak.edu";
     //char *host = "myhost"
