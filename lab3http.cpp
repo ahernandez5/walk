@@ -27,7 +27,7 @@ char *get_ip(char *host);
 char *build_get_query(char *host, const char *page);
 void program_usage();
 
- extern char message[400]; //**********
+extern char message[400]; //**********
 
 #define HOST "www.google.com"
 //#define HOST "./lab3http sleipnir.cs.csub.edu /~ahernandez/3350/lab3/message.txt"
@@ -49,23 +49,23 @@ int messageFunction()
     //char *page = "mypage
     char host[] = "sleipnir.cs.csubak.edu";
     //char *host = "myhost"
-   
 
 
-    
+
+
     // Warning: deprecated conversion from string constant to char*
     //const char *page;
 
-   /* if (argv == 1) {
-        program_usage();
-        exit(2);
-    }
-    host = & ar[1];
-    if (argc > 2) {
-        page = keys01[2];
-    } else {
-        page = PAGE;
-    } */
+    /* if (argv == 1) {
+         program_usage();
+         exit(2);
+     }
+     host = & ar[1];
+     if (argc > 2) {
+         page = keys01[2];
+     } else {
+         page = PAGE;
+     } */
     sock = create_tcp_socket();
     ip = get_ip(host);
     fprintf(stderr, "IP is %s\n", ip);
@@ -120,9 +120,9 @@ int messageFunction()
         }
         if (htmlstart) {
             fprintf(stdout, htmlcontent);
-                    strcpy (message, htmlcontent); //******************
-            }
-        
+            strcpy(message, htmlcontent); //******************
+        }
+
 
         memset(buf, 0, tmpres);
     }
