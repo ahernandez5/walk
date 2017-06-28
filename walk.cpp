@@ -122,13 +122,13 @@ enum State {
     STATE_GAMEOVER //val 4
 
 };
- char message[400]; // ***************
- extern int messageFunction(); //*********8
+char message[400]; // ***************
+extern int messageFunction(); //*********8
 
 class Global {
 public:
     unsigned char keys[65536];
-   
+
     State state; //*
     int done;
     int xres, yres;
@@ -155,7 +155,7 @@ public:
     {
         logOpen();
         state = STATE_STARTUP; //*
-   // lab3
+        // lab3
         //keys01[4000]; // ********************
         camera[0] = camera[1] = 0.0;
         ball_pos[0] = 500.0;
@@ -184,7 +184,7 @@ public:
             box[i][2] = 0.0;
         }
         memset(keys, 0, 65536);
-       // memset(message, 0, 4000); //******************************
+        // memset(message, 0, 4000); //******************************
     }
 } gl;
 
@@ -984,34 +984,12 @@ void render(void)
         r.center = 1;
         ggprint8b(&r, 16, 0, "W   STARTUP SCREEN");
         r.center = 0;
-        r.left= gl.xres/2 -100;
+        r.left = gl.xres / 2 - 100;
         ggprint8b(&r, 16, 0, "W walk");
         ggprint8b(&r, 16, 0, "P   Play");
-        ggprint8b(&r, 16, 0, "Sure\n" );
-        messageFunction ();  //just call the function
-            ggprint8b(&r, 16, 0, "Sure\n %s", message);
-    
+        ggprint8b(&r, 16, 0, "Sure\n");
+        messageFunction(); //just call the function
+        ggprint8b(&r, 16, 0, "Sure\n %s", message);
 
-    
-}   
-
-    
-    
-         
-        
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
