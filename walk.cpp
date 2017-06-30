@@ -1,6 +1,15 @@
 //Modified by: Aurora Hernandez
-//Date: 06/20/2017
-//Purpose: Walk.cpp dynamic 
+//Date: 06/30/2017
+//Purpose: Walk.cpp, Lab 5 
+
+//Week5:
+// Edit K&R coding style
+// indenting
+//return of text from HTTP function
+//time access to Sleipnir server 
+// use of enum constants
+//add enum element to pause game 
+//Press P to toggle pause/continue
 
 //3350
 //program: walk.cpp
@@ -23,7 +32,6 @@
 #include "ppm.h"
 #include "fonts.h"
 #include <iostream>
-//#include "lab3http.cpp"
 
 //defined types
 typedef double Flt;
@@ -68,6 +76,9 @@ public:
     double oobillion;
     struct timespec timeStart, timeEnd, timeCurrent;
     struct timespec walkTime;
+
+    //poll server every 2-3 seconds
+    struct timespec lastSleipnirPoll;
 
     Timers()
     {
@@ -119,11 +130,28 @@ enum State {
     STATE_NONE,
     STATE_STARTUP,
     STATE_GAMEPLAY,
-    STATE_GAMEOVER //val 4
-
+    STATE_GAMEOVER, //val 4
+    STATE_GAMEPAUSE
 };
-char message[400]; // ***************
-extern int messageFunction(); //*********8
+
+
+
+//Generic web request class to contact any host and page
+//using user agent and port provided
+
+class WebRequest {
+private:
+    //internal functions
+    int create_tcp_socket();
+    char *get_ip(char *host);
+    char *build_get_query(char *host, const char *page);
+    void program_usage();
+    std::string agent;
+    int port;
+public:
+    WebRequest(std::string userAgent = "HTMLGET 1.0", int requestPort = 80);
+    std::string request(std::string hostInput, std::string pageInput);
+};
 
 class Global {
 public:
@@ -145,6 +173,8 @@ public:
     Flt camera[2];
     Vec ball_pos;
     Vec ball_vel;
+    std::string message;
+    WebRequest sleipnirRequest;
 
     ~Global()
     {
@@ -155,8 +185,6 @@ public:
     {
         logOpen();
         state = STATE_STARTUP; //*
-        // lab3
-        //keys01[4000]; // ********************
         camera[0] = camera[1] = 0.0;
         ball_pos[0] = 500.0;
         ball_pos[1] = ball_pos[2] = 0.0;
@@ -184,7 +212,11 @@ public:
             box[i][2] = 0.0;
         }
         memset(keys, 0, 65536);
-        // memset(message, 0, 4000); //******************************
+        // recording the time of the poll server
+        //request message here
+        timers.recordTime(&timers.lastSleipnirPoll);
+        message = sleipnirRequest.request("sleipnir.cs.csubak.edu",
+                "/~ahernandez5/3350/lab3/message");
     }
 } gl;
 
@@ -463,7 +495,7 @@ void checkResize(XEvent *e)
 
 void init()
 {
-
+    //empty
 }
 
 void checkMouse(XEvent *e)
@@ -552,10 +584,13 @@ void checkKeys(XEvent *e)
     if (shift) {
     }
     switch (key) {
-    case XK_q:
-        //gl.keys01 ^= 1;
     case XK_p:
-        gl.state = STATE_GAMEPLAY;
+        //P for gameplay and gamepause
+        if (gl.state == STATE_GAMEPLAY) {
+            gl.state = STATE_GAMEPAUSE;
+        } else {
+            gl.state = STATE_GAMEPLAY;
+        }
         break;
     case XK_s:
         screenCapture();
@@ -624,106 +659,125 @@ Flt VecNormalize(Vec vec)
 
 void physics(void)
 {
-    if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left]) {
-        //man is walking...
-        //when time is up, advance the frame.
-        timers.recordTime(&timers.timeCurrent);
-        double timeSpan = timers.timeDiff(&timers.walkTime, &timers.timeCurrent);
-        if (timeSpan > gl.delay) {
-            //advance
-            ++gl.walkFrame;
-            if (gl.walkFrame >= 16)
-                gl.walkFrame -= 16;
-            timers.recordTime(&timers.walkTime);
-        }
-        for (int i = 0; i < 20; i++) {
-            if (gl.keys[XK_Left]) {
-                gl.box[i][0] += 1.0 * (0.05 / gl.delay);
-                if (gl.box[i][0] > gl.xres + 10.0)
-                    gl.box[i][0] -= gl.xres + 10.0;
-                gl.camera[0] -= 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
-                if (gl.camera[0] < 0.0)
-                    gl.camera[0] = 0.0;
-            } else {
-                gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
-                if (gl.box[i][0] < -10.0)
-                    gl.box[i][0] += gl.xres + 10.0;
-                gl.camera[0] += 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
-                if (gl.camera[0] < 0.0)
-                    gl.camera[0] = 0.0;
+    if (gl.state == STATE_GAMEPLAY) {
+        if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left]) {
+            //man is walking...
+            //when time is up, advance the frame.
+            timers.recordTime(&timers.timeCurrent);
+            double timeSpan = timers.timeDiff(&timers.walkTime,
+                    &timers.timeCurrent);
+            if (timeSpan > gl.delay) {
+                //advance
+                ++gl.walkFrame;
+                if (gl.walkFrame >= 16)
+                    gl.walkFrame -= 16;
+                timers.recordTime(&timers.walkTime);
+            }
+            for (int i = 0; i < 20; i++) {
+                if (gl.keys[XK_Left]) {
+                    gl.box[i][0] += 1.0 * (0.05 / gl.delay);
+                    if (gl.box[i][0] > gl.xres + 10.0)
+                        gl.box[i][0] -= gl.xres + 10.0;
+                    gl.camera[0] -= 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
+                    if (gl.camera[0] < 0.0)
+                        gl.camera[0] = 0.0;
+                } else {
+                    gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
+                    if (gl.box[i][0] < -10.0)
+                        gl.box[i][0] += gl.xres + 10.0;
+                    gl.camera[0] += 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
+                    if (gl.camera[0] < 0.0)
+                        gl.camera[0] = 0.0;
+                }
+            }
+            if (gl.exp.onoff) {
+                gl.exp.pos[0] -= 2.0 * (0.05 / gl.delay);
+            }
+            if (gl.exp44.onoff) {
+                gl.exp44.pos[0] -= 2.0 * (0.05 / gl.delay);
             }
         }
         if (gl.exp.onoff) {
-            gl.exp.pos[0] -= 2.0 * (0.05 / gl.delay);
+            //explosion is happening
+            timers.recordTime(&timers.timeCurrent);
+            double timeSpan = timers.timeDiff(&gl.exp.time,
+                    &timers.timeCurrent);
+            if (timeSpan > gl.exp.delay) {
+                //advance explosion frame
+                ++gl.exp.frame;
+                if (gl.exp.frame >= 23) {
+                    //explosion is done.
+                    gl.exp.onoff = 0;
+                    gl.exp.frame = 0;
+                } else {
+                    timers.recordTime(&gl.exp.time);
+                }
+            }
         }
         if (gl.exp44.onoff) {
-            gl.exp44.pos[0] -= 2.0 * (0.05 / gl.delay);
-        }
-    }
-    if (gl.exp.onoff) {
-        //explosion is happening
-        timers.recordTime(&timers.timeCurrent);
-        double timeSpan = timers.timeDiff(&gl.exp.time, &timers.timeCurrent);
-        if (timeSpan > gl.exp.delay) {
-            //advance explosion frame
-            ++gl.exp.frame;
-            if (gl.exp.frame >= 23) {
-                //explosion is done.
-                gl.exp.onoff = 0;
-                gl.exp.frame = 0;
-            } else {
-                timers.recordTime(&gl.exp.time);
+            //explosion is happening
+            timers.recordTime(&timers.timeCurrent);
+            double timeSpan = timers.timeDiff(&gl.exp44.time,
+                    &timers.timeCurrent);
+            if (timeSpan > gl.exp44.delay) {
+                //advance explosion frame
+                ++gl.exp44.frame;
+                if (gl.exp44.frame >= 16) {
+                    //explosion is done.
+                    gl.exp44.onoff = 0;
+                    gl.exp44.frame = 0;
+                } else {
+                    timers.recordTime(&gl.exp44.time);
+                }
             }
         }
-    }
-    if (gl.exp44.onoff) {
-        //explosion is happening
-        timers.recordTime(&timers.timeCurrent);
-        double timeSpan = timers.timeDiff(&gl.exp44.time, &timers.timeCurrent);
-        if (timeSpan > gl.exp44.delay) {
-            //advance explosion frame
-            ++gl.exp44.frame;
-            if (gl.exp44.frame >= 16) {
-                //explosion is done.
-                gl.exp44.onoff = 0;
-                gl.exp44.frame = 0;
-            } else {
-                timers.recordTime(&gl.exp44.time);
-            }
-        }
-    }
-    //move the ball
-    gl.ball_pos[1] += gl.ball_vel[1];
-    gl.ball_vel[1] -= 0.7;
-    Flt dd = lev.ftsz[0];
-    int col = (int) (gl.camera[0] / dd) + (500.0 / lev.tilesize[0] + 1);
-    col = col % lev.ncols;
-    int hgt = 0;
-    //linear search, fix to one search
-    if (lev.dynamicHeight[col] != -1) { // array added
-        // set hgt
-        hgt = lev.dynamicHeight[col];
-    } else { //std:: cout << "recalculating  \n ";
+        //move the ball
+        gl.ball_pos[1] += gl.ball_vel[1];
+        gl.ball_vel[1] -= 0.7;
+        Flt dd = lev.ftsz[0];
+        int col = (int) (gl.camera[0] / dd) + (500.0 / lev.tilesize[0] + 1);
+        col = col % lev.ncols;
+        int hgt = 0;
+        //linear search, fix to one search
+        if (lev.dynamicHeight[col] != -1) { // array added
+            // set hgt
+            hgt = lev.dynamicHeight[col];
+        } else { //std:: cout << "recalculating  \n ";
 
-        for (int i = 0; i < lev.nrows; i++) {
-            if (lev.arr[i][col] != ' ') {
-                hgt = i;
-                break;
+            for (int i = 0; i < lev.nrows; i++) {
+                if (lev.arr[i][col] != ' ') {
+                    hgt = i;
+                    break;
+                }
+                // std:: cout << "recalculating  \n ";
             }
+
             // std:: cout << "recalculating  \n ";
+            printf("col saved: %i \n", col);
+
+        }
+        //save height value in array 
+        lev.dynamicHeight[col] = hgt;
+        //height of ball is (nrows-1-i)*tile_height + starting point
+        Flt h = lev.tilesize[1]*(lev.nrows - hgt) + lev.tile_base;
+        if (gl.ball_pos[1] <= h) {
+            gl.ball_vel[1] = 0.0;
+            gl.ball_pos[1] = h;
         }
 
-        // std:: cout << "recalculating  \n ";
-        printf("col saved: %i \n", col);
-
-    }
-    //save height value in array 
-    lev.dynamicHeight[col] = hgt;
-    //height of ball is (nrows-1-i)*tile_height + starting point
-    Flt h = lev.tilesize[1]*(lev.nrows - hgt) + lev.tile_base;
-    if (gl.ball_pos[1] <= h) {
-        gl.ball_vel[1] = 0.0;
-        gl.ball_pos[1] = h;
+        //contact servery every 2-3
+        //get current time
+        timers.recordTime(&timers.timeCurrent);
+        //calculate the difference between last poll and current time
+        double elapsed = timers.timeDiff(&timers.lastSleipnirPoll,
+                &timers.timeCurrent);
+        //if more than 2.5 seconds have elapsed, then request the page
+        if (elapsed > 2.5) {
+            gl.message = gl.sleipnirRequest.request("sleipnir.cs.csubak.edu",
+                    "/~ahernandez5/3350/lab3/message");
+            //save the current time to last time we polled sleipnir
+            timers.timeCopy(&timers.lastSleipnirPoll, &timers.timeCurrent);
+        }
     }
 }
 
@@ -733,8 +787,11 @@ void render(void)
     //Clear the screen
     glClearColor(0.1, 0.1, 0.1, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
-    float cx = gl.xres / 2.0;
-    float cy = gl.yres / 2.0;
+
+    //Use the position of the ball to be the same for the walker
+    //this way we don't have to manually calculate it but looks nice
+    float cx = gl.ball_pos[0];
+    float cy = gl.ball_pos[1] + 150; //gl.yres / 2.0;
     //
     //show ground
     glBegin(GL_QUADS);
@@ -947,17 +1004,16 @@ void render(void)
     r.center = 0;
     ggprint8b(&r, 16, c, "W   Walk cycle");
     ggprint8b(&r, 16, c, "E   Explosion");
+    ggprint8b(&r, 16, c, "P   Pause");
     ggprint8b(&r, 16, c, "+   faster");
     ggprint8b(&r, 16, c, "-   slower");
     ggprint8b(&r, 16, c, "right arrow -> walk right");
     ggprint8b(&r, 16, c, "left arrow  <- walk left");
     ggprint8b(&r, 16, c, "frame: %i", gl.walkFrame);
+
     if (gl.movie) {
         screenCapture();
     }
-
-
-    //
     // Check for startup state
     if (gl.state == STATE_STARTUP) {
         h = 100;
@@ -966,30 +1022,55 @@ void render(void)
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
-
         //transparency   
-        glColor4f(1.0, 1.0, 0.0, 0.8); // YELLOW
+        glColor4ub(255, 228, 225, 225); // RGB: mistyRose
         glTranslated(gl.xres / 2, gl.yres / 2, 0);
         glBegin(GL_QUADS);
-        glVertex2i(-w, -h);
-        glVertex2i(-w, h);
-        glVertex2i(w, h);
-        glVertex2i(w, -h);
+        glVertex2i(-150, -100);
+        glVertex2i(-150, 100);
+        glVertex2i(125, 100);
+        glVertex2i(125, -100);
         glEnd();
         glDisable(GL_BLEND);
         glPopMatrix();
         r.bot = gl.yres / 2 + 80;
         r.left = gl.xres / 2;
         r.center = 1;
-        ggprint8b(&r, 16, 0, "W   STARTUP SCREEN");
+        ggprint16(&r, 30, 5, "W  STARTUP SCREEN");
+        ggprint16(&r, 30, 5, "P  Play");
+        //render the message that is saved in Global
+        //updated every 2.5 seconds
+        ggprint16(&r, 30, 0, "Sleipnir:\n %s", gl.message.c_str());
         r.center = 0;
         r.left = gl.xres / 2 - 100;
-        ggprint8b(&r, 16, 0, "W walk");
-        ggprint8b(&r, 16, 0, "P   Play");
-        ggprint8b(&r, 16, 0, "Sure\n");
-        messageFunction(); //just call the function
-        ggprint8b(&r, 16, 0, "Sure\n %s", message);
+    } else if (gl.state == STATE_GAMEPAUSE) {
+        glPushMatrix();
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        //transparency   
+        glColor4ub(255, 240, 245, 225); // RGB: mistyRose
+        glTranslated(gl.xres / 2, gl.yres / 2, 0);
+        glBegin(GL_QUADS);
+        glVertex2i(-75, -75);
+        glVertex2i(-75, 75);
+        glVertex2i(75, 75);
+        glVertex2i(75, -75);
+        glEnd();
+        glDisable(GL_BLEND);
+        glPopMatrix();
+        r.bot = gl.yres / 2;
+        r.left = gl.xres / 2;
+        r.center = 1;
+        r.left = gl.xres / 2;
+        ggprint16(&r, 30, 0, "GAME PAUSED");
+        ggprint16(&r, 30, 0, "P   Play");
+    } else {
+        r.bot = 25;
+        r.left = 25;
+        r.center = 0;
+        //render the message that is saved in Global
+        //updated every 2.5 seconds
+        ggprint16(&r, 30, 0, "Sleipnir: %s", gl.message.c_str());
     }
 }

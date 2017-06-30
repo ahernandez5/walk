@@ -18,24 +18,36 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <string.h>
-//Include unistd.h to fix missing function close error
 #include <unistd.h>
+#include <string>
 
-int create_tcp_socket();
-char *get_ip(char *host);
-//Changed the parameter char* page to const char* page
-char *build_get_query(char *host, const char *page);
-void program_usage();
+//Generic web request class to contact any host and page
+//using user agent and port provided
+//Declared in both lab3http.cpp and walk.cpp because there is no common header
 
-extern char message[400]; //**********
+class WebRequest {
+private:
+    //internal functions
+    int create_tcp_socket();
+    char *get_ip(char *host);
+    char *build_get_query(char *host, const char *page);
+    void program_usage();
+    std::string agent;
+    int port;
 
-#define HOST "www.google.com"
-//#define HOST "./lab3http sleipnir.cs.csub.edu /~ahernandez/3350/lab3/message.txt"
-#define PAGE 
-#define PORT 80
-#define USERAGENT "HTMLGET 1.0"
+public:
+    WebRequest(std::string userAgent = "HTMLGET 1.0", int requestPort = 80);
+    std::string request(std::string hostInput, std::string pageInput);
+};
 
-int messageFunction()
+WebRequest::WebRequest(std::string userAgent, int requestPort)
+: agent(userAgent), port(requestPort)
+{
+}
+
+// it takes host and page parameters and returns data
+
+std::string WebRequest::request(std::string hostInput, std::string pageInput)
 {
     struct sockaddr_in *remote;
     int sock;
@@ -43,29 +55,13 @@ int messageFunction()
     char *ip;
     char *get;
     char buf[BUFSIZ + 1];
-    //char *host;
 
-    char page[] = "/~ahernandez5/3350/lab3/message";
-    //char *page = "mypage
-    char host[] = "sleipnir.cs.csubak.edu";
-    //char *host = "myhost"
+    // cstr now contains a c-string copy of str
+    char page[pageInput.size()];
+    strcpy(page, pageInput.c_str());
+    char host[hostInput.size()];
+    strcpy(host, hostInput.c_str());
 
-
-
-
-    // Warning: deprecated conversion from string constant to char*
-    //const char *page;
-
-    /* if (argv == 1) {
-         program_usage();
-         exit(2);
-     }
-     host = & ar[1];
-     if (argc > 2) {
-         page = keys01[2];
-     } else {
-         page = PAGE;
-     } */
     sock = create_tcp_socket();
     ip = get_ip(host);
     fprintf(stderr, "IP is %s\n", ip);
@@ -79,9 +75,10 @@ int messageFunction()
         fprintf(stderr, "%s is not a valid IP address\n", ip);
         exit(1);
     }
-    remote->sin_port = htons(PORT);
+    remote->sin_port = htons(port);
 
-    if (connect(sock, (struct sockaddr *) remote, sizeof (struct sockaddr)) < 0) {
+    if (connect(sock, (struct sockaddr *) remote,
+            sizeof (struct sockaddr)) < 0) {
         perror("Could not connect");
         exit(1);
     }
@@ -104,6 +101,7 @@ int messageFunction()
     memset(buf, 0, sizeof (buf));
     int htmlstart = 0;
     char * htmlcontent;
+    std::string result;
     while ((tmpres = recv(sock, buf, BUFSIZ, 0)) > 0) {
         if (htmlstart == 0) {
             /* Under certain conditions this will not work.
@@ -120,30 +118,25 @@ int messageFunction()
         }
         if (htmlstart) {
             fprintf(stdout, htmlcontent);
-            strcpy(message, htmlcontent); //******************
+            //copy htmlcontent to result string
+            //because it's local scope
+            result = htmlcontent;
         }
-
 
         memset(buf, 0, tmpres);
     }
     if (tmpres < 0) {
         perror("Error receiving data");
     }
+
     free(get);
     free(remote);
     free(ip);
     close(sock);
-    return 0;
+    return result;
 }
 
-void program_usage()
-{
-    fprintf(stderr, "USAGE: htmlget host [page]\n\
-\thost: the website hostname. ex: coding.debuntu.org\n\
-\tpage: the page to retrieve. ex: index.html, default: /\n");
-}
-
-int create_tcp_socket()
+int WebRequest::create_tcp_socket()
 {
     int sock;
     if ((sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
@@ -153,7 +146,7 @@ int create_tcp_socket()
     return sock;
 }
 
-char *get_ip(char *host)
+char* WebRequest::get_ip(char *host)
 {
     struct hostent *hent;
     //ip address format  123.123.123.123
@@ -180,7 +173,7 @@ char *get_ip(char *host)
 //Changed the parameter char* page to const char* page to reflect
 //the prototype
 
-char *build_get_query(char *host, const char *page)
+char* WebRequest::build_get_query(char *host, const char *page)
 {
     char *query;
     //Changed type from char* to const char* to fix deprecated error
@@ -193,9 +186,8 @@ char *build_get_query(char *host, const char *page)
                 getpage);
     }
     // -5 is to consider the %s %s %s in tpl and the ending \0
-    query = (char *) malloc(strlen(host) + strlen(getpage) + strlen(USERAGENT)
+    query = (char *) malloc(strlen(host) + strlen(getpage) + agent.size()
             + strlen(tpl) - 5);
-    sprintf(query, tpl, getpage, host, USERAGENT);
+    sprintf(query, tpl, getpage, host, agent.c_str());
     return query;
 }
-
