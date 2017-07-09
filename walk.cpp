@@ -1,5 +1,5 @@
 //Modified by: Aurora Hernandez
-//Date: 06/30/2017
+//Date: 07/06/2017
 //Purpose: Walk.cpp, Lab 5 
 
 //Week5:
@@ -10,6 +10,15 @@
 // use of enum constants
 //add enum element to pause game 
 //Press P to toggle pause/continue
+
+
+//Wee7:
+//1. Finished the unit-test of vecNormalize() in walk.cpp.
+
+//2. Wrote unit-test function in walk.cpp to test "#define VecCopy(a,b) (b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2]"
+
+//3. Updated Makefile for -D UNIT_TEST
+
 
 //3350
 //program: walk.cpp
