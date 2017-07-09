@@ -584,6 +584,19 @@ void checkKeys(XEvent *e)
     if (shift) {
     }
     switch (key) {
+        //unit test
+#ifdef UNIT_TEST
+    case XK_a:
+        void unitTest_normalize();
+        unitTest_normalize();       
+        break;
+#endif //UNIT_TEST
+#ifdef UNIT_TEST
+    case XK_b:
+        void unitTest_test1();
+        unitTest_test1();       
+        break;
+#endif //UNIT_TEST        
     case XK_p:
         //P for gameplay and gamepause
         if (gl.state == STATE_GAMEPLAY) {
@@ -656,6 +669,42 @@ Flt VecNormalize(Vec vec)
     vec[2] = zlen * tlen;
     return (len);
 }
+#ifdef UNIT_TEST
+// unit test with tolerance 
+void unitTest_normalize()
+{
+
+    Vec vec = {10.0, 10.0, 0.0};
+    // for  (int i =0; i< 9; i++) {
+
+    Flt ret = VecNormalize(vec);
+    Flt tolerance = 0.05;
+    ret = ret - 14.14;
+    ret = fabs(ret);
+    if ( ret <= tolerance) {
+        printf("unit test successful\n");
+    } else {
+
+        printf("unit test failed. ret: %lf vec[0]: %lf/n", ret, vec[0]);
+    }
+}
+#endif //UNIT_TEST
+// unit testing 
+#ifdef UNIT_TEST
+void unitTest_test1() {
+    Vec test = {1, 2, 3};
+    Vec result;
+    
+    VecCopy(result, test);
+    if(test[0] == result[0] && test[1] == result[1] && test[2]  == result[2]) {
+        printf("unit test success\n");
+    } else {
+        printf("unit test failed\n");
+    }
+}
+        
+#endif
+/////////////////////////////////////
 
 void physics(void)
 {
@@ -773,6 +822,7 @@ void physics(void)
                 &timers.timeCurrent);
         //if more than 2.5 seconds have elapsed, then request the page
         if (elapsed > 2.5) {
+
             gl.message = gl.sleipnirRequest.request("sleipnir.cs.csubak.edu",
                     "/~ahernandez5/3350/lab3/message");
             //save the current time to last time we polled sleipnir
