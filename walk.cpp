@@ -1,6 +1,6 @@
 //Modified by: Aurora Hernandez
 //Date: 07/06/2017
-//Purpose: Walk.cpp, Lab 5 
+//Purpose: Walk.cpp, Lab 5, unit testing 
 
 //Week5:
 // Edit K&R coding style
@@ -12,12 +12,16 @@
 //Press P to toggle pause/continue
 
 
-//Wee7:
+//Week7:
 //1. Finished the unit-test of vecNormalize() in walk.cpp.
 
-//2. Wrote unit-test function in walk.cpp to test "#define VecCopy(a,b) (b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2]"
+//2. Wrote unit-test function in walk.cpp to test "#define VecCopy(a,b) 
+// (b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2]"
 
-//3. Updated Makefile for -D UNIT_TEST
+//3. Wrote a unit-test for lab-3 program for
+//char *get_ip(char *host) placed in lab3http.cpp and walk.cpp
+
+//4.Updated Makefile for -D UNIT_TEST
 
 
 //3350
@@ -597,15 +601,24 @@ void checkKeys(XEvent *e)
 #ifdef UNIT_TEST
     case XK_a:
         void unitTest_normalize();
-        unitTest_normalize();       
+        unitTest_normalize();
         break;
 #endif //UNIT_TEST
 #ifdef UNIT_TEST
     case XK_b:
         void unitTest_test1();
-        unitTest_test1();       
+        unitTest_test1();
         break;
-#endif //UNIT_TEST        
+#endif //UNIT_TEST
+        // unit test http web ip
+#ifdef UNIT_TEST
+    case XK_c:
+
+        void unit_web_ip();
+        unit_web_ip();
+        break;
+
+#endif 
     case XK_p:
         //P for gameplay and gamepause
         if (gl.state == STATE_GAMEPLAY) {
@@ -680,6 +693,7 @@ Flt VecNormalize(Vec vec)
 }
 #ifdef UNIT_TEST
 // unit test with tolerance 
+
 void unitTest_normalize()
 {
 
@@ -690,7 +704,7 @@ void unitTest_normalize()
     Flt tolerance = 0.05;
     ret = ret - 14.14;
     ret = fabs(ret);
-    if ( ret <= tolerance) {
+    if (ret <= tolerance) {
         printf("unit test successful\n");
     } else {
 
@@ -700,18 +714,20 @@ void unitTest_normalize()
 #endif //UNIT_TEST
 // unit testing 
 #ifdef UNIT_TEST
-void unitTest_test1() {
+
+void unitTest_test1()
+{
     Vec test = {1, 2, 3};
     Vec result;
-    
+
     VecCopy(result, test);
-    if(test[0] == result[0] && test[1] == result[1] && test[2]  == result[2]) {
+    if (test[0] == result[0] && test[1] == result[1] && test[2] == result[2]) {
         printf("unit test success\n");
     } else {
         printf("unit test failed\n");
     }
 }
-        
+
 #endif
 /////////////////////////////////////
 

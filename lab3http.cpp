@@ -20,16 +20,23 @@
 #include <string.h>
 #include <unistd.h>
 #include <string>
+#include <iostream>
 
 //Generic web request class to contact any host and page
 //using user agent and port provided
 //Declared in both lab3http.cpp and walk.cpp because there is no common header
 
 class WebRequest {
+    // Functions are public only while testing then
+    //go back to private if not testing
+#ifdef UNIT_TEST
+public:
+#else
 private:
+#endif
     //internal functions
     int create_tcp_socket();
-    char *get_ip(char *host);
+    char *get_ip(char *host); //unit test
     char *build_get_query(char *host, const char *page);
     void program_usage();
     std::string agent;
@@ -191,3 +198,24 @@ char* WebRequest::build_get_query(char *host, const char *page)
     sprintf(query, tpl, getpage, host, agent.c_str());
     return query;
 }
+
+#ifdef UNIT_TEST
+
+void unit_web_ip(){
+    WebRequest webrequest;
+    char host[] = "localhost";
+    char* result = webrequest.get_ip(host);
+    char expected[] = "127.0.0.1";
+    std:: cout << "Result is: " << result << "\n";
+    std:: cout << "Expected was " << expected << "\n";
+    if(strcmp(result, expected) == 0) {
+        std:: cout << "Test succeeded\n";
+    } else {
+        std:: cout << "Test failed\n";
+    }
+
+}
+//unit_web_ip();
+
+#endif //UNIT_WEB_TEST 
+
