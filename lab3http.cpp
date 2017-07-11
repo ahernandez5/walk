@@ -201,17 +201,18 @@ char* WebRequest::build_get_query(char *host, const char *page)
 
 #ifdef UNIT_TEST
 
-void unit_web_ip(){
+void unit_web_ip()
+{
     WebRequest webrequest;
     char host[] = "localhost";
     char* result = webrequest.get_ip(host);
     char expected[] = "127.0.0.1";
-    std:: cout << "Result is: " << result << "\n";
-    std:: cout << "Expected was " << expected << "\n";
-    if(strcmp(result, expected) == 0) {
-        std:: cout << "Test succeeded\n";
+    std::cout << "Result is: " << result << "\n";
+    std::cout << "Expected was " << expected << "\n";
+    if (strcmp(result, expected) == 0) {
+        std::cout << "Test succeeded\n";
     } else {
-        std:: cout << "Test failed\n";
+        std::cout << "Test failed\n";
     }
 
 }
